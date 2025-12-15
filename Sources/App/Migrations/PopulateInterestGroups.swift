@@ -1,11 +1,3 @@
-//
-//  PopulateInterestGroups.swift
-//  CoffeeServer
-//
-//  Created by Michael Critz on 11/30/25.
-//
-
-import Foundation
 import Fluent
 
 struct PopulateInterestGroups: AsyncMigration {
