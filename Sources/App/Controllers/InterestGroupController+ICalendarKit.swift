@@ -11,7 +11,11 @@ extension InterestGroupController {
         guard let group = try await InterestGroup.find(groupID, on: req.db) else {
             throw Abort(.notFound)
         }
-        let events = try await group.$events.query(on: req.db).all()
+        // Optimization: 50 events should be roughtly a year of events.
+        let events = try await group.$events.query(on: req.db)
+            .with(\.$venue)
+            .limit(50)
+            .all()
         let iCalEvents = try await icalEvents(for: events, req: req)
         let calendarBody = ICalendar(events: iCalEvents).vEncoded
         let calHeaders = calendarHeaders(group: group)
@@ -42,7 +46,7 @@ extension InterestGroupController {
                                          dtend: .dateTime(event.endAt),
                                          duration: nil,
                                          xMicrosoftCDOBusyStatus: .busy)
-            let venue = try await event.$venue.get(on: req.db)
+            let venue = event.venue
             icEvent.description = "Coffee at \(venue.name)\n\n\(venue.location?.mapLocation ?? venue.location?.title ?? "")"
             icEvent.location = venue.location?.address ?? venue.location?.mapLocation ?? venue.location?.title ?? ""
             if let lat = venue.location?.latitude,
@@ -79,3 +83,4 @@ extension ICalendarDate: @retroactive Comparable {
         lhs.date == rhs.date
     }
 }
+
