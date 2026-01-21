@@ -152,7 +152,11 @@ extension InterestGroupController {
             }.id("coffee-groups")
         }
         
-        return WebPage(content).response(title: group.name)
+        return WebPage(content).response(
+            title: group.name,
+            ogPath: req.headerHostName()?.appending(group.short),
+            ogImagePath: group.imageURL
+        )
     }
     
     private func location(for event: Event) -> String {

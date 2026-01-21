@@ -11,7 +11,9 @@ struct WebPage {
     public func response(
         status: HTTPResponseStatus = .ok,
         headers: HTTPHeaders = .defaultHeaders,
-        title: String = "Coffee"
+        title: String = "Coffee",
+        ogPath: String? = nil,
+        ogImagePath: String? = nil
     ) -> Response {
         let body = HTML(
             .head(
@@ -20,6 +22,22 @@ struct WebPage {
                 .meta(
                     .name("viewport"),
                     .content("width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0")
+                ),
+                .meta(
+                    .property("og:site_name"),
+                    .content("Coffee Coffee Coffee Coffee")
+                ),
+                .meta(
+                    .property("og:title"),
+                    .content(title)
+                ),
+                .meta(
+                    .property("og:url"),
+                    .content(ogPath ?? "https://coffeecoffeecoffee.coffee"),
+                ),
+                .meta(
+                    .property("og:image"),
+                    .content(ogImagePath ?? "https://coffeecoffeecoffee.coffee/default-coffee.webp")
                 ),
                 .stylesheet("/style.css"),
             ),
