@@ -104,6 +104,8 @@ struct EventController: RouteCollection {
             throw Abort(.notFound)
         }
         event.name = eventData.name
+        event.startAt = eventData.startAt
+        event.endAt = eventData.endAt
         event.$group.id = try group.requireID()
         event.$venue.id = try venue.requireID()
         event.imageURL = eventData.imageURL

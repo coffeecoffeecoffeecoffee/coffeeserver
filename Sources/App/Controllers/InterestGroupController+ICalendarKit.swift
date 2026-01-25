@@ -11,10 +11,11 @@ extension InterestGroupController {
         guard let group = try await InterestGroup.find(groupID, on: req.db) else {
             throw Abort(.notFound)
         }
-        // Optimization: 50 events should be roughtly a year of events.
+        // TODO: Optimization: 50 events should be roughtly a year of events.
         let events = try await group.$events.query(on: req.db)
+            .sort(\.$startAt, .descending)
             .with(\.$venue)
-            .limit(50)
+            // .limit(50)
             .all()
         let iCalEvents = try await icalEvents(for: events, req: req)
         let calendarBody = ICalendar(events: iCalEvents).vEncoded
@@ -55,8 +56,7 @@ extension InterestGroupController {
             }
             icEvents.append(icEvent)
         }
-        let sortedEvents = icEvents.sorted(by: { $0 < $1 })
-        return sortedEvents
+        return icEvents
     }
 }
 
