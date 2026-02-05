@@ -39,7 +39,7 @@ extension InterestGroupController {
                         .$events
                         .query(on: req.db)
                         .filter(\Event.$endAt >= now)
-                        .sort(\.$startAt)
+                        .sort(\.$startAt, .descending)
                         .all()
                     // TODO: Update this to one query. It can be done!
                     //                        .with(\.$venue)
@@ -62,8 +62,19 @@ extension InterestGroupController {
                 rawGroupsAndEvents.append(contentsOf: element)
             }
             let sortedGroupEvents = rawGroupsAndEvents.sorted { alpha, bravo in
+                let alphaHasEvents = !alpha.1.isEmpty
+                let bravoHasEvents = !bravo.1.isEmpty
+
+                // Groups with events come before groups without events
+                if alphaHasEvents != bravoHasEvents {
+                    return alphaHasEvents && !bravoHasEvents
+                }
+
+                // If both have (or both don't have) events order by most recent event endAt
                 guard let alphaMostRecentEvent = alpha.1.first?.endAt,
-                      let bravoMostRecentEvent = bravo.1.first?.endAt else { return false }
+                      let bravoMostRecentEvent = bravo.1.first?.endAt else {
+                    return false
+                }
                 return alphaMostRecentEvent < bravoMostRecentEvent
             }
             return sortedGroupEvents
@@ -211,3 +222,4 @@ extension InterestGroupController {
         }.class("coffee-group")
     }
 }
+
