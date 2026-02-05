@@ -38,24 +38,26 @@ extension InterestGroupController {
                     let eventModels = try await interestGroup
                         .$events
                         .query(on: req.db)
-                        .filter(\Event.$endAt >= now)
-                        .sort(\.$startAt, .descending)
+                        .filter(\Event.$startAt >= now)
+                        .sort(\.$startAt, .ascending)
+                        .limit(1)
                         .all()
-                    // TODO: Update this to one query. It can be done!
-                    //                        .with(\.$venue)
                     
-                    var eventDatas = [EventData]()
-                    for eventModel in eventModels {
-                        guard let eventData = try? await eventModel.publicData(db: req.db) else {
-                            req.logger
-                                .error(
-                                    "Couldn’t get public data for event: \(eventModel.id?.uuidString ?? eventModel.name)"
-                                )
-                            continue
+                    // Keep only the single upcoming event with the closest start time to now
+                    if let closestEvent = eventModels.min(by: { lhs, rhs in
+                        let lhsDelta = lhs.startAt.timeIntervalSince(now)
+                        let rhsDelta = rhs.startAt.timeIntervalSince(now)
+                        return lhsDelta < rhsDelta
+                    }) {
+                        if let eventData = try? await closestEvent.publicData(db: req.db) {
+                            return [(interestGroup, [eventData])]
+                        } else {
+                            req.logger.error("Couldn’t get public data for event: \(closestEvent.id?.uuidString ?? closestEvent.name)")
+                            return [(interestGroup, [])]
                         }
-                        eventDatas.append(eventData)
+                    } else {
+                        return [(interestGroup, [])]
                     }
-                    return [(interestGroup, eventDatas)]
                 }
             }
             for try await element in taskGroup {
