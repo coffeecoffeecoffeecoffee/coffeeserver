@@ -47,6 +47,23 @@ final class Event: EventRepresentable, Model, Content, @unchecked Sendable {
     }
 }
 
+extension Event: Hashable {
+    // Hashable requires Equatable
+    static func == (lhs: Event, rhs: Event) -> Bool {
+        guard let lhsID = try? lhs.requireID(),
+              let rhsID = try? rhs.requireID() else {
+            return false
+        }
+        return lhsID == rhsID
+    }
+
+    func hash(into hasher: inout Hasher) {
+        if let id = try? self.requireID() {
+            hasher.combine(id)
+        }
+    }
+}
+
 extension Event {
     func publicData(db: Database) async throws -> EventData {
         let groupID = try await self.$group.get(on: db).requireID()
