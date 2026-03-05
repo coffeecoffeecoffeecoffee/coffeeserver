@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coffee Admin</title>
+    <link rel="stylesheet" id="remote-css" href="/style.css">
+    <style>
+        /* fallback CSS variables in case remote stylesheet hasn't loaded */
+        :root {
+            --text-on-dark: #fff;
+            --text-on-light: #111;
+            --page-background-color: rgb(240, 240, 240);
+            --text-color: #333;
+            --text-color-secondary: #888;
+            --link-color: #f29b31;
+            --link-hover-color: #e2731f;
+            --component-background-color: #ba9;
+            --default-border-radius: 0.77rem;
+            --default-padding: 0.5rem 2.25rem;
+            --default-shadow: 0 0 12px rgba(0,0,0,0.2);
+            --transition-slow: all 0.35s ease-in-out;
+        }
+    </style>
+    <style>
+        * { box-sizing: border-box; }
+
+        /* ---- Login ---- */
+        #login-view {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .login-card {
+            background: white;
+            border-radius: var(--default-border-radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: var(--default-shadow);
+            margin: 1rem;
+        }
+        .login-card img {
+            display: block;
+            margin: 0 auto 1.5rem;
+            width: 180px;
+        }
+        .login-card h1 {
+            margin: 0 0 1.5rem;
+            font-family: "Rockwell", "Hoefler Text", serif;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--text-color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* ---- Forms ---- */
+        .form-group { margin-bottom: 1rem; }
+        label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--text-color-secondary);
+            margin-bottom: 0.35rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="url"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 0.6rem 0.85rem;
+            border: 1.5px solid #ddd;
+            border-radius: var(--default-border-radius);
+            font-size: 1rem;
+            font-family: inherit;
+            background: #fafafa;
+            color: var(--text-color);
+            transition: border-color 0.15s;
+        }
+        input:focus { outline: none; border-color: var(--link-color); background: #fff; }
+        input[readonly] { background: #f3f3f3; color: var(--text-color-secondary); }
+
+        /* ---- Buttons ---- */
+        .btn {
+            display: inline-block;
+            padding: 0.65rem 1.25rem;
+            border-radius: var(--default-border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--link-color); color: #fff; width: 100%; }
+        .btn-primary:hover { background: var(--link-hover-color); }
+        .btn-primary:disabled { opacity: 0.6; cursor: default; }
+        .btn-secondary { background: #eee; color: var(--text-color); }
+        .btn-secondary:hover { background: #ddd; }
+        .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+
+        /* ---- Status messages ---- */
+        .status {
+            padding: 0.7rem 1rem;
+            border-radius: var(--default-border-radius);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .status.error { display: block; background: #fee; color: #b33; }
+        .status.success { display: block; background: #efe; color: #363; }
+
+        /* ---- Admin header ---- */
+        #admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1.5rem;
+            background: white;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            gap: 1rem;
+        }
+        #admin-header img { height: 32px; }
+        #admin-header .header-right { display: flex; gap: 0.5rem; align-items: center; }
+        #admin-header .header-title {
+            font-family: "Rockwell", serif;
+            font-size: 0.9rem;
+            color: var(--text-color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        /* ---- Main content ---- */
+        #main-content {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* ---- Group sections ---- */
+        .group-section { margin-bottom: 2.5rem; }
+        .group-section h2 {
+            font-family: "Rockwell", serif;
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 0.5rem;
+            margin: 0 0 0.75rem;
+        }
+
+        /* ---- Event rows ---- */
+        .event-row {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            background: white;
+            border-radius: var(--default-border-radius);
+            padding: 0.7rem 0.9rem;
+            margin-bottom: 0.4rem;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            transition: box-shadow 0.15s, transform 0.15s;
+        }
+        .event-row:hover {
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            transform: translateY(-1px);
+        }
+        .event-thumb {
+            width: 52px;
+            height: 52px;
+            border-radius: calc(var(--default-border-radius) * 0.7);
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #eee;
+        }
+        .event-thumb-placeholder {
+            width: 52px;
+            height: 52px;
+            border-radius: calc(var(--default-border-radius) * 0.7);
+            background: #f0ebe3;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+        .event-info { flex: 1; min-width: 0; }
+        .event-name {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.95rem;
+        }
+        .event-meta {
+            font-size: 0.8rem;
+            color: var(--text-color-secondary);
+            margin-top: 0.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.45rem;
+            border-radius: 100px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            vertical-align: middle;
+        }
+        .badge-ok { background: #efe; color: #363; }
+        .badge-missing { background: #fee; color: #b33; }
+        .chevron { color: #ccc; font-size: 1.2rem; flex-shrink: 0; }
+
+        /* ---- Edit drawer ---- */
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 100;
+        }
+        #overlay.open { display: block; }
+        #edit-drawer {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+            z-index: 101;
+            transform: translateX(100%);
+            transition: transform 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        #edit-drawer.open { transform: translateX(0); }
+        .drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .drawer-header h3 {
+            margin: 0;
+            font-family: "Rockwell", serif;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+            padding: 0;
+            line-height: 1;
+            flex-shrink: 0;
+            margin-left: 0.5rem;
+        }
+        .drawer-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        .drawer-footer {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        .drawer-footer .btn { flex: 1; }
+        .image-preview-wrap { margin-top: 0.5rem; }
+        .image-preview-wrap img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: var(--default-border-radius);
+            display: none;
+        }
+
+        /* ---- Settings panel ---- */
+        #settings-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        #settings-overlay.open { display: flex; }
+        .settings-panel {
+            background: white;
+            border-radius: var(--default-border-radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 420px;
+            margin: 1rem;
+            box-shadow: var(--default-shadow);
+        }
+        .settings-panel h3 {
+            margin: 0 0 1.5rem;
+            font-family: "Rockwell", serif;
+        }
+        .settings-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .settings-actions .btn { flex: 1; }
+
+        .loading { text-align: center; color: var(--text-color-secondary); padding: 3rem 1rem; }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-view">
+    <div class="login-card">
+        <img id="login-logo" src="/logo-stack.png" alt="Coffee">
+        <h1>Admin</h1>
+        <div class="status" id="login-error"></div>
+        <div class="form-group">
+            <label for="login-server">Server URL</label>
+            <input type="url" id="login-server" value="https://coffeecoffeecoffee.coffee">
+        </div>
+        <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" placeholder="admin@example.com" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" id="login-btn">Sign In</button>
+    </div>
+</div>
+
+<!-- MAIN -->
+<div id="main-view" style="display:none">
+    <div id="admin-header">
+        <img id="header-logo" src="/logo-long.png" alt="Coffee">
+        <span class="header-title">Admin</span>
+        <div class="header-right">
+            <button class="btn btn-secondary btn-sm" id="settings-btn">Settings</button>
+            <button class="btn btn-secondary btn-sm" id="logout-btn">Sign Out</button>
+        </div>
+    </div>
+    <div id="main-content">
+        <div class="status" id="main-status"></div>
+        <div id="events-list"><div class="loading">Loading events…</div></div>
+    </div>
+</div>
+
+<!-- EDIT DRAWER -->
+<div id="overlay"></div>
+<div id="edit-drawer">
+    <div class="drawer-header">
+        <h3 id="drawer-title">Edit Event</h3>
+        <button class="close-btn" id="drawer-close">✕</button>
+    </div>
+    <div class="drawer-body">
+        <div class="status" id="edit-status"></div>
+        <input type="hidden" id="edit-id">
+        <input type="hidden" id="edit-group-id">
+        <input type="hidden" id="edit-venue-id">
+        <input type="hidden" id="edit-venue-lat">
+        <input type="hidden" id="edit-venue-lon">
+        <div class="form-group">
+            <label>Event Name</label>
+            <input type="text" id="edit-name">
+        </div>
+        <div class="form-group" id="venue-select-group" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+                <label style="margin:0">Venue</label>
+                <button class="btn btn-secondary btn-sm" id="new-venue-toggle">+ New Venue</button>
+            </div>
+            <select id="edit-venue-select" style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #ddd;border-radius:var(--default-border-radius);font-size:1rem;font-family:inherit;background:#fafafa;color:var(--text-color)">
+                <option value="">Loading venues…</option>
+            </select>
+            <div id="new-venue-form" style="display:none;margin-top:0.75rem;padding:0.75rem;background:#f8f8f8;border-radius:var(--default-border-radius)">
+                <div class="form-group">
+                    <label>Venue Name</label>
+                    <input type="text" id="new-venue-name" placeholder="e.g. Sightglass Coffee">
+                </div>
+                <div class="form-group">
+                    <label>Location (optional)</label>
+                    <input type="text" id="new-venue-location" placeholder="e.g. San Francisco, CA">
+                </div>
+                <div class="form-group">
+                    <label>Latitude (optional)</label>
+                    <input type="text" id="new-venue-lat" placeholder="37.7749">
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <label>Longitude (optional)</label>
+                    <input type="text" id="new-venue-lon" placeholder="-122.4194">
+                </div>
+                <button class="btn btn-primary" id="create-venue-btn" style="width:auto;padding:0.5rem 1rem">Create Venue</button>
+            </div>
+        </div>
+        <div class="form-group" id="venue-readonly-group">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+                <label style="margin:0">Venue</label>
+                <button class="btn btn-secondary btn-sm" id="edit-venue-toggle">Edit Venue</button>
+            </div>
+            <input type="text" id="edit-venue-name" readonly>
+            <div id="edit-venue-form" style="display:none;margin-top:0.75rem;padding:0.75rem;background:#f8f8f8;border-radius:var(--default-border-radius)">
+                <div class="form-group">
+                    <label>Venue Name</label>
+                    <input type="text" id="edit-venue-name-field">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="edit-venue-location-field" placeholder="e.g. Mission District, SF">
+                </div>
+                <div class="form-group">
+                    <label>Latitude</label>
+                    <input type="text" id="edit-venue-lat-field">
+                </div>
+                <div class="form-group">
+                    <label>Longitude</label>
+                    <input type="text" id="edit-venue-lon-field">
+                </div>
+                <div class="form-group" style="margin-bottom:0.5rem">
+                    <label>Map URL</label>
+                    <input type="url" id="edit-venue-url-field" placeholder="https://maps.apple.com/…">
+                </div>
+                <button class="btn btn-primary" id="save-venue-btn" style="width:auto;padding:0.5rem 1rem">Save Venue</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Start</label>
+            <input type="datetime-local" id="edit-start">
+        </div>
+        <div class="form-group">
+            <label>End</label>
+            <input type="datetime-local" id="edit-end">
+        </div>
+        <div class="form-group">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.35rem">
+                <label style="margin:0">Image URL</label>
+                <button class="btn btn-secondary btn-sm" id="rehost-btn">Rehost</button>
+            </div>
+            <input type="url" id="edit-image-url" placeholder="https://…">
+            <div class="image-preview-wrap">
+                <img id="image-preview" alt="Image preview">
+            </div>
+        </div>
+    </div>
+    <div class="drawer-footer">
+        <button class="btn btn-secondary" id="drawer-cancel">Cancel</button>
+        <button class="btn btn-primary" id="drawer-save">Save</button>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings-overlay">
+    <div class="settings-panel">
+        <h3>Settings</h3>
+        <div class="form-group">
+            <label>Server URL</label>
+            <input type="url" id="settings-server-url" placeholder="https://coffeecoffeecoffee.coffee">
+        </div>
+        <div class="settings-actions">
+            <button class="btn btn-secondary" id="settings-cancel">Cancel</button>
+            <button class="btn btn-primary" id="settings-save">Save</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ---- State ----
+let jwt = null;
+const eventMap = {};
+let venueList = [];
+
+// ---- Settings ----
+const settings = {
+    get serverUrl() {
+        return localStorage.getItem('coffee_admin_server') || window.location.origin;
+    },
+    get fsqKey() {
+        return localStorage.getItem('coffee_admin_fsq') || '';
+    },
+};
+
+// ---- Rehost image ----
+async function rehostImage() {
+    const url = document.getElementById('edit-image-url').value.trim();
+    if (!url) { showStatus('edit-status', 'Paste an image URL first.', 'error'); return; }
+
+    const btn = document.getElementById('rehost-btn');
+    btn.textContent = 'Uploading…';
+    btn.disabled = true;
+    clearStatus('edit-status');
+
+    try {
+        const imgRes = await fetch(url);
+        if (!imgRes.ok) throw new Error(`Could not fetch image: ${imgRes.status}`);
+        const contentType = imgRes.headers.get('Content-Type') || 'image/jpeg';
+        const blob = await imgRes.blob();
+        const filename = url.split('/').pop().split('?')[0] || 'image.jpg';
+
+        const uploadRes = await apiFetch('/api/v2/media/upload', {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': contentType }),
+            body: blob,
+        });
+        if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+        const media = await uploadRes.json();
+
+        const hostedUrl = `${settings.serverUrl}/api/v2/media/${media.id}`;
+        document.getElementById('edit-image-url').value = hostedUrl;
+        updateImagePreview();
+
+    } catch (err) {
+        showStatus('edit-status', err.message, 'error');
+    } finally {
+        btn.textContent = 'Rehost';
+        btn.disabled = false;
+    }
+}
+
+// ---- Remote resource loading ----
+function updateRemoteResources(serverUrl) {
+    document.getElementById('remote-css').href = serverUrl + '/style.css';
+    document.getElementById('login-logo').src = serverUrl + '/logo-stack.png';
+    document.getElementById('header-logo').src = serverUrl + '/logo-long.png';
+}
+
+// ---- API helpers ----
+function apiUrl(path) {
+    return settings.serverUrl.replace(/\/$/, '') + path;
+}
+
+function authHeaders(extra = {}) {
+    return jwt
+        ? { 'Authorization': `Bearer ${jwt}`, ...extra }
+        : { ...extra };
+}
+
+async function apiFetch(path, options = {}) {
+    const res = await fetch(apiUrl(path), options);
+    if (res.status === 401) { logout(); throw new Error('Session expired'); }
+    return res;
+}
+
+// ---- Date helpers ----
+function toDatetimeLocal(iso) {
+    if (!iso) return '';
+    // "2026-02-07T22:00:00Z" -> "2026-02-07T22:00"
+    return iso.slice(0, 16).replace(' ', 'T');
+}
+
+function toISO(local) {
+    if (!local) return '';
+    return local + ':00Z';
+}
+
+function formatDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function escHtml(s) {
+    if (typeof s !== 'string') return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showStatus(elId, msg, type) {
+    const el = document.getElementById(elId);
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    if (type === 'success') setTimeout(() => { el.className = 'status'; }, 3000);
+}
+
+function clearStatus(elId) {
+    const el = document.getElementById(elId);
+    el.className = 'status';
+    el.textContent = '';
+}
+
+// ---- Login ----
+async function login() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    clearStatus('login-error');
+
+    const serverInput = document.getElementById('login-server').value.trim().replace(/\/$/, '');
+    if (serverInput) {
+        localStorage.setItem('coffee_admin_server', serverInput);
+        updateRemoteResources(serverInput);
+    }
+
+    if (!email || !password) {
+        showStatus('login-error', 'Email and password are required.', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('login-btn');
+    btn.textContent = 'Signing in…';
+    btn.disabled = true;
+
+    try {
+        const creds = btoa(email + ':' + password);
+        const res = await fetch(apiUrl('/api/v2/users/login'), {
+            method: 'POST',
+            headers: { 'Authorization': 'Basic ' + creds },
+        });
+        const data = await res.json();
+        if (!res.ok || data.error === 'true') throw new Error(data.message || 'Login failed');
+
+        jwt = data['jwt-token'];
+        localStorage.setItem('coffee_admin_jwt', jwt);
+        showMainView();
+    } catch (err) {
+        showStatus('login-error', err.message, 'error');
+    } finally {
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+    }
+}
+
+function logout() {
+    jwt = null;
+    localStorage.removeItem('coffee_admin_jwt');
+    document.getElementById('main-view').style.display = 'none';
+    document.getElementById('login-view').style.display = 'flex';
+    document.getElementById('events-list').innerHTML = '<div class="loading">Loading events…</div>';
+}
+
+// ---- Main view ----
+async function showMainView() {
+    document.getElementById('login-view').style.display = 'none';
+    document.getElementById('main-view').style.display = 'block';
+    await loadEvents();
+}
+
+async function loadEvents() {
+    const listEl = document.getElementById('events-list');
+    listEl.innerHTML = '<div class="loading">Loading events…</div>';
+
+    try {
+        const groupsRes = await apiFetch('/api/v2/groups', { headers: authHeaders() });
+        const groups = await groupsRes.json();
+        const activeGroups = groups.filter(g => !g.isArchived && !g.archived);
+
+        if (activeGroups.length === 0) {
+            listEl.innerHTML = '<div class="loading">No active groups.</div>';
+            return;
+        }
+
+        const now = new Date();
+
+        // Fetch events for all active groups in parallel
+        const groupEventPairs = await Promise.all(
+            activeGroups.map(async group => {
+                const res = await apiFetch(`/api/v2/groups/${group.id}/events`, { headers: authHeaders() });
+                const all = await res.json();
+                const upcoming = all
+                    .filter(e => new Date(e.end_at) >= now)
+                    .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
+                const past = all
+                    .filter(e => new Date(e.end_at) < now)
+                    .sort((a, b) => new Date(b.start_at) - new Date(a.start_at))
+                    .slice(0, 3);
+                return { group, upcoming, past };
+            })
+        );
+
+        // Index all events by id
+        groupEventPairs.forEach(({ upcoming, past }) =>
+            [...upcoming, ...past].forEach(e => eventMap[e.id] = e)
+        );
+
+        const html = groupEventPairs
+            .map(({ group, upcoming, past }) => {
+                let rows = '';
+                if (upcoming.length > 0) {
+                    rows += upcoming.map(e => eventRowHtml(e)).join('');
+                } else {
+                    rows += `<div style="color:var(--text-color-secondary);font-size:0.85rem;padding:0.5rem 0 0.75rem">No upcoming events</div>`;
+                    rows += past.map(e => eventRowHtml(e, true)).join('');
+                }
+                return `<div class="group-section">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+                        <h2 style="margin:0;border:none;padding:0">${escHtml(group.name)}</h2>
+                        <button class="btn btn-secondary btn-sm" data-new-group="${escHtml(group.id)}">+ New Event</button>
+                    </div>
+                    <div style="height:2px;background:#eee;margin-bottom:0.75rem"></div>
+                    ${rows}
+                </div>`;
+            }).join('');
+
+        listEl.innerHTML = html || '<div class="loading">No upcoming events.</div>';
+
+    } catch (err) {
+        if (err.message !== 'Session expired') {
+            listEl.innerHTML = `<div class="loading" style="color:#b33">Failed to load: ${escHtml(err.message)}</div>`;
+        }
+    }
+}
+
+function eventRowHtml(e, past = false) {
+    const thumb = e.image_url
+        ? `<img class="event-thumb" src="${escHtml(e.image_url)}" alt="" onerror="this.style.display='none;this.nextElementSibling.style.display='flex'">`
+        : `<div class="event-thumb-placeholder">☕</div>`;
+
+    const badge = e.image_url
+        ? `<span class="badge badge-ok">Image</span>`
+        : `<span class="badge badge-missing">No image</span>`;
+
+    return `
+        <div class="event-row" data-id="${escHtml(e.id)}" style="${past ? 'opacity:0.55' : ''}">
+            ${thumb}
+            <div class="event-info">
+                <div class="event-name">${escHtml(e.name)}</div>
+                <div class="event-meta">${escHtml(formatDate(e.start_at))} &middot; ${escHtml(e.venue?.name || '')} ${badge}</div>
+            </div>
+            <span class="chevron">›</span>
+        </div>`;
+}
+
+// ---- Edit drawer ----
+async function openCreate(groupId) {
+    // Fetch venues if not loaded
+    if (!venueList.length) {
+        const res = await apiFetch('/api/v2/venues', { headers: authHeaders() });
+        venueList = await res.json();
+    }
+
+    const select = document.getElementById('edit-venue-select');
+    select.innerHTML = venueList
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(v => `<option value="${escHtml(v.id)}">${escHtml(v.name)}</option>`)
+        .join('');
+
+    document.getElementById('edit-id').value = '';
+    document.getElementById('edit-group-id').value = groupId;
+    document.getElementById('edit-name').value = '';
+    document.getElementById('edit-start').value = '';
+    document.getElementById('edit-end').value = '';
+    document.getElementById('edit-image-url').value = '';
+    document.getElementById('drawer-title').textContent = 'New Event';
+    document.getElementById('venue-select-group').style.display = 'block';
+    document.getElementById('venue-readonly-group').style.display = 'none';
+    clearStatus('edit-status');
+    updateImagePreview();
+
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('edit-drawer').classList.add('open');
+}
+
+function openEdit(eventId) {
+    const e = eventMap[eventId];
+    if (!e) return;
+
+    document.getElementById('edit-id').value = e.id;
+    document.getElementById('edit-group-id').value = e.group_id;
+    document.getElementById('edit-venue-id').value = e.venue?.id || '';
+    document.getElementById('edit-venue-lat').value = e.venue?.location?.latitude || '';
+    document.getElementById('edit-venue-lon').value = e.venue?.location?.longitude || '';
+    document.getElementById('edit-name').value = e.name;
+    document.getElementById('edit-venue-name').value = e.venue?.name || '';
+    document.getElementById('edit-start').value = toDatetimeLocal(e.start_at);
+    document.getElementById('edit-end').value = toDatetimeLocal(e.end_at);
+    document.getElementById('edit-image-url').value = e.image_url || '';
+    document.getElementById('drawer-title').textContent = e.name;
+    document.getElementById('venue-select-group').style.display = 'none';
+    document.getElementById('venue-readonly-group').style.display = 'block';
+    clearStatus('edit-status');
+    updateImagePreview();
+
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('edit-drawer').classList.add('open');
+}
+
+
+function closeEdit() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('edit-drawer').classList.remove('open');
+}
+
+function updateImagePreview() {
+    const url = document.getElementById('edit-image-url').value.trim();
+    const img = document.getElementById('image-preview');
+    if (url) {
+        img.src = url;
+        img.style.display = 'block';
+        img.onerror = () => { img.style.display = 'none'; };
+    } else {
+        img.style.display = 'none';
+        img.src = '';
+    }
+}
+
+async function saveEvent() {
+    const saveBtn = document.getElementById('drawer-save');
+    clearStatus('edit-status');
+
+    const eventId = document.getElementById('edit-id').value;
+    const isNew = !eventId;
+
+    const venueId = isNew
+        ? document.getElementById('edit-venue-select').value
+        : document.getElementById('edit-venue-id').value;
+    const venueName = isNew
+        ? document.getElementById('edit-venue-select').selectedOptions[0]?.text || ''
+        : document.getElementById('edit-venue-name').value;
+
+    const body = {
+        group_id: document.getElementById('edit-group-id').value,
+        name: document.getElementById('edit-name').value.trim(),
+        start_at: toISO(document.getElementById('edit-start').value),
+        end_at: toISO(document.getElementById('edit-end').value),
+        image_url: document.getElementById('edit-image-url').value.trim() || null,
+        venue: { id: venueId, name: venueName },
+    };
+    if (!isNew) body.id = eventId;
+
+    if (!body.name) { showStatus('edit-status', 'Event name is required.', 'error'); return; }
+    if (!venueId) { showStatus('edit-status', 'Please select a venue.', 'error'); return; }
+
+    saveBtn.textContent = 'Saving…';
+    saveBtn.disabled = true;
+
+    try {
+        const res = await apiFetch(isNew ? '/api/v2/events' : `/api/v2/events/${eventId}`, {
+            method: isNew ? 'POST' : 'PUT',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(body),
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `HTTP ${res.status}`);
+        }
+
+        const updated = await res.json();
+        eventMap[updated.id] = updated;
+
+        showStatus('edit-status', 'Saved!', 'success');
+        setTimeout(() => {
+            closeEdit();
+            loadEvents();
+        }, 700);
+
+    } catch (err) {
+        if (err.message !== 'Session expired') {
+            showStatus('edit-status', err.message, 'error');
+        }
+    } finally {
+        saveBtn.textContent = 'Save';
+        saveBtn.disabled = false;
+    }
+}
+
+// ---- Inline venue editing ----
+async function toggleEditVenueForm() {
+    const form = document.getElementById('edit-venue-form');
+    const visible = form.style.display !== 'none';
+    if (!visible) {
+        if (!venueList.length) {
+            const res = await apiFetch('/api/v2/venues', { headers: authHeaders() });
+            venueList = await res.json();
+        }
+        // Populate from current venue
+        const venue = venueList.find(v => v.id === document.getElementById('edit-venue-id').value);
+        document.getElementById('edit-venue-name-field').value = venue?.name || '';
+        document.getElementById('edit-venue-location-field').value = venue?.location?.title || '';
+        document.getElementById('edit-venue-lat-field').value = venue?.location?.latitude || '';
+        document.getElementById('edit-venue-lon-field').value = venue?.location?.longitude || '';
+        document.getElementById('edit-venue-url-field').value = venue?.url || '';
+    }
+    form.style.display = visible ? 'none' : 'block';
+    document.getElementById('edit-venue-toggle').textContent = visible ? 'Edit Venue' : 'Cancel';
+}
+
+async function saveVenue() {
+    const id = document.getElementById('edit-venue-id').value;
+    const name = document.getElementById('edit-venue-name-field').value.trim();
+    if (!name) { showStatus('edit-status', 'Venue name is required.', 'error'); return; }
+
+    const lat = parseFloat(document.getElementById('edit-venue-lat-field').value);
+    const lon = parseFloat(document.getElementById('edit-venue-lon-field').value);
+    const locationTitle = document.getElementById('edit-venue-location-field').value.trim();
+    const mapUrl = document.getElementById('edit-venue-url-field').value.trim();
+
+    const body = { name };
+    if (!isNaN(lat) && !isNaN(lon)) {
+        body.location = { latitude: lat, longitude: lon };
+        if (locationTitle) body.location.title = locationTitle;
+    }
+    if (mapUrl) body.url = mapUrl;
+
+    const btn = document.getElementById('save-venue-btn');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    try {
+        const res = await apiFetch(`/api/v2/venues/${id}`, {
+            method: 'PUT',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`);
+        const updated = await res.json();
+        const idx = venueList.findIndex(v => v.id === id);
+        if (idx !== -1) venueList[idx] = updated;
+        document.getElementById('edit-venue-name').value = updated.name;
+        toggleEditVenueForm();
+        showStatus('edit-status', 'Venue saved!', 'success');
+    } catch (err) {
+        showStatus('edit-status', err.message, 'error');
+    } finally {
+        btn.textContent = 'Save Venue';
+        btn.disabled = false;
+    }
+}
+
+// ---- Venue creation ----
+function toggleNewVenueForm() {
+    const form = document.getElementById('new-venue-form');
+    const visible = form.style.display !== 'none';
+    form.style.display = visible ? 'none' : 'block';
+    document.getElementById('new-venue-toggle').textContent = visible ? '+ New Venue' : 'Cancel';
+    if (!visible) document.getElementById('new-venue-name').focus();
+}
+
+async function createVenue() {
+    const name = document.getElementById('new-venue-name').value.trim();
+    if (!name) { showStatus('edit-status', 'Venue name is required.', 'error'); return; }
+
+    const lat = parseFloat(document.getElementById('new-venue-lat').value);
+    const lon = parseFloat(document.getElementById('new-venue-lon').value);
+    const locationTitle = document.getElementById('new-venue-location').value.trim();
+
+    const body = { name };
+    if (!isNaN(lat) && !isNaN(lon)) {
+        body.location = { latitude: lat, longitude: lon };
+        if (locationTitle) body.location.title = locationTitle;
+    }
+
+    const btn = document.getElementById('create-venue-btn');
+    btn.textContent = 'Creating…';
+    btn.disabled = true;
+
+    try {
+        const res = await apiFetch('/api/v2/venues', {
+            method: 'POST',
+            headers: authHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `HTTP ${res.status}`);
+        }
+        const venue = await res.json();
+        venueList.push(venue);
+
+        const select = document.getElementById('edit-venue-select');
+        const option = document.createElement('option');
+        option.value = venue.id;
+        option.textContent = venue.name;
+        select.appendChild(option);
+        select.value = venue.id;
+
+        ['new-venue-name', 'new-venue-location', 'new-venue-lat', 'new-venue-lon']
+            .forEach(id => { document.getElementById(id).value = ''; });
+        toggleNewVenueForm();
+
+    } catch (err) {
+        showStatus('edit-status', err.message, 'error');
+    } finally {
+        btn.textContent = 'Create Venue';
+        btn.disabled = false;
+    }
+}
+
+// ---- Settings ----
+function openSettings() {
+    document.getElementById('settings-server-url').value =
+        localStorage.getItem('coffee_admin_server') || '';
+    document.getElementById('settings-overlay').classList.add('open');
+}
+
+function closeSettings() {
+    document.getElementById('settings-overlay').classList.remove('open');
+}
+
+function saveSettings() {
+    const url = document.getElementById('settings-server-url').value.trim().replace(/\/$/, '');
+    url ? localStorage.setItem('coffee_admin_server', url) : localStorage.removeItem('coffee_admin_server');
+    closeSettings();
+}
+
+// ---- Wire up events ----
+document.addEventListener('DOMContentLoaded', () => {
+    // Pre-fill server URL on login form
+    const savedServer = localStorage.getItem('coffee_admin_server');
+    if (savedServer) document.getElementById('login-server').value = savedServer;
+    updateRemoteResources(savedServer || 'https://coffeecoffeecoffee.coffee');
+
+    // Restore session
+    const saved = localStorage.getItem('coffee_admin_jwt');
+    if (saved) { jwt = saved; showMainView(); }
+    else document.getElementById('login-view').style.display = 'flex';
+
+    // Login
+    document.getElementById('login-btn').addEventListener('click', login);
+    document.getElementById('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('login-email').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
+
+    // Header
+    document.getElementById('logout-btn').addEventListener('click', logout);
+    document.getElementById('settings-btn').addEventListener('click', openSettings);
+
+    // Event list (delegated)
+    document.getElementById('events-list').addEventListener('click', e => {
+        const newBtn = e.target.closest('[data-new-group]');
+        if (newBtn) { openCreate(newBtn.dataset.newGroup); return; }
+        const row = e.target.closest('.event-row');
+        if (row) openEdit(row.dataset.id);
+    });
+
+    // Edit drawer
+    document.getElementById('overlay').addEventListener('click', closeEdit);
+    document.getElementById('drawer-close').addEventListener('click', closeEdit);
+    document.getElementById('drawer-cancel').addEventListener('click', closeEdit);
+    document.getElementById('drawer-save').addEventListener('click', saveEvent);
+    document.getElementById('edit-image-url').addEventListener('input', updateImagePreview);
+    document.getElementById('rehost-btn').addEventListener('click', rehostImage);
+    document.getElementById('new-venue-toggle').addEventListener('click', toggleNewVenueForm);
+    document.getElementById('create-venue-btn').addEventListener('click', createVenue);
+    document.getElementById('edit-venue-toggle').addEventListener('click', toggleEditVenueForm);
+    document.getElementById('save-venue-btn').addEventListener('click', saveVenue);
+
+    // Settings
+    document.getElementById('settings-overlay').addEventListener('click', e => {
+        if (e.target.id === 'settings-overlay') closeSettings();
+    });
+    document.getElementById('settings-cancel').addEventListener('click', closeSettings);
+    document.getElementById('settings-save').addEventListener('click', saveSettings);
+});
+</script>
+</body>
+</html>
