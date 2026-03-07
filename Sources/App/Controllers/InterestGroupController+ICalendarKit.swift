@@ -49,6 +49,9 @@ extension InterestGroupController {
                                          xMicrosoftCDOBusyStatus: .busy)
             let venue = event.venue
             icEvent.description = "Coffee at \(venue.name)\n\n\(venue.location?.mapLocation ?? venue.location?.title ?? "")"
+            if let notes = event.notes, !notes.isEmpty {
+                icEvent.description = notes
+            }
             icEvent.location = venue.location?.address ?? venue.location?.mapLocation ?? venue.location?.title ?? ""
             if let lat = venue.location?.latitude,
                let lon = venue.location?.longitude {

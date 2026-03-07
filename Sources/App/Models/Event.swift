@@ -28,6 +28,9 @@ final class Event: EventRepresentable, Model, Content, @unchecked Sendable {
     @Field(key: "end_at")
     var endAt: Date
     
+    @Field(key: "notes")
+    var notes: String?
+    
     init() { }
 
     init(id: UUID? = nil,
@@ -36,7 +39,8 @@ final class Event: EventRepresentable, Model, Content, @unchecked Sendable {
          venue: Venue.IDValue,
          imageURL: ImageURL? = nil,
          startAt: Date,
-         endAt: Date) {
+         endAt: Date,
+         notes: String? = nil) {
         self.id = id
         self.name = name
         self.$group.id = group
@@ -44,6 +48,7 @@ final class Event: EventRepresentable, Model, Content, @unchecked Sendable {
         self.imageURL = imageURL
         self.startAt = startAt
         self.endAt = endAt
+        self.notes = notes
     }
 }
 
@@ -74,6 +79,7 @@ extension Event {
                      venue: venue,
                      imageURL: self.imageURL,
                      startAt: self.startAt,
-                     endAt: self.endAt)
+                     endAt: self.endAt,
+                     notes: self.notes)
     }
 }
