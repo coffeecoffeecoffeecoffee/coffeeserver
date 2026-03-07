@@ -10,6 +10,7 @@ struct EventData: EventRepresentable, Codable {
     var imageURL: ImageURL?
     var startAt: Date
     var endAt: Date
+    var notes: String?
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -19,6 +20,7 @@ struct EventData: EventRepresentable, Codable {
         case startAt = "start_at"
         case endAt = "end_at"
         case venue
+        case notes
     }
 }
 
@@ -58,7 +60,8 @@ extension EventData {
             venue: try thisVenue.requireID(),
             imageURL: imageURL,
             startAt: startAt,
-            endAt: endAt
+            endAt: endAt,
+            notes: notes
         )
         try await newEvent.save(on: db)
         return newEvent
