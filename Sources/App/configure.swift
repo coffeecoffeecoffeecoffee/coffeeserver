@@ -32,6 +32,7 @@ func configureCORS(on app: Application) {
         allowedMethods: [.GET, .POST, .PUT, .OPTIONS, .DELETE, .PATCH],
         allowedHeaders: [
             .accept, .authorization, .contentType, .origin, .xRequestedWith, .userAgent, .accessControlAllowOrigin,
+            "File-Name"
         ]
     )
     let cors = CORSMiddleware(configuration: corsConfig)
