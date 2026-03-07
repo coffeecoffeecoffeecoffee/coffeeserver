@@ -70,11 +70,13 @@ struct EventController: RouteCollection {
         let event = Event(
             id: eventData.id,
             name: eventData.name,
+            short: eventData.short,
             group: existingGroupID,
             venue: existingVenueID,
             imageURL: eventData.imageURL,
             startAt: eventData.startAt,
-            endAt: eventData.endAt
+            endAt: eventData.endAt,
+            notes: eventData.notes
         )
         
         try await event.save(on: req.db)
@@ -109,6 +111,8 @@ struct EventController: RouteCollection {
         event.$group.id = try group.requireID()
         event.$venue.id = try venue.requireID()
         event.imageURL = eventData.imageURL
+        event.notes = eventData.notes
+        event.short = eventData.short ?? eventData.name.toSlug()
         try await event.update(on: req.db)
         return try await event.publicData(db: req.db)
     }
