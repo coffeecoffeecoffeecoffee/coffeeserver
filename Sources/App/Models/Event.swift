@@ -34,6 +34,9 @@ final class Event: EventRepresentable, Model, Content, @unchecked Sendable {
     @Field(key: "notes")
     var notes: String?
     
+    @Field(key: "notes")
+    var notes: String?
+    
     init() { }
 
     init(id: UUID? = nil,

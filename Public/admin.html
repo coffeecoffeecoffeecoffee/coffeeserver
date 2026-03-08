@@ -463,6 +463,10 @@
                 <img id="image-preview" alt="Image preview">
             </div>
         </div>
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea id="edit-notes" rows="4" style="width:100%;padding:0.6rem 0.85rem;border:1.5px solid #ddd;border-radius:var(--default-border-radius);font-size:1rem;font-family:inherit;background:#fafafa;color:var(--text-color);resize:vertical" placeholder="Optional notes for this event…"></textarea>
+        </div>
     </div>
     <div class="drawer-footer">
         <button class="btn btn-secondary" id="drawer-cancel">Cancel</button>
@@ -759,6 +763,7 @@ async function openCreate(groupId) {
     document.getElementById('edit-start').value = '';
     document.getElementById('edit-end').value = '';
     document.getElementById('edit-image-url').value = '';
+    document.getElementById('edit-notes').value = '';
     document.getElementById('drawer-title').textContent = 'New Event';
     document.getElementById('venue-select-group').style.display = 'block';
     document.getElementById('venue-readonly-group').style.display = 'none';
@@ -783,6 +788,7 @@ function openEdit(eventId) {
     document.getElementById('edit-start').value = toDatetimeLocal(e.start_at);
     document.getElementById('edit-end').value = toDatetimeLocal(e.end_at);
     document.getElementById('edit-image-url').value = e.image_url || '';
+    document.getElementById('edit-notes').value = e.notes || '';
     document.getElementById('drawer-title').textContent = e.name;
     document.getElementById('venue-select-group').style.display = 'none';
     document.getElementById('venue-readonly-group').style.display = 'block';
@@ -832,6 +838,7 @@ async function saveEvent() {
         start_at: toISO(document.getElementById('edit-start').value),
         end_at: toISO(document.getElementById('edit-end').value),
         image_url: document.getElementById('edit-image-url').value.trim() || null,
+        notes: document.getElementById('edit-notes').value.trim() || null,
         venue: { id: venueId, name: venueName },
     };
     if (!isNew) body.id = eventId;
