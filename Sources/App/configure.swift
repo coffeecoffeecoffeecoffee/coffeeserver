@@ -81,7 +81,8 @@ func databaseMigrations(on app: Application) throws {
     app.migrations.add(AddVenueMedia())
     app.migrations.add(CreateVenueMediaContent())
     app.migrations.add(PopulateInterestGroups())
-    app.migrations.add(UpdateEventAddShortAndNotes())
+    app.migrations.add(AddNotesToEvent())
+    app.migrations.add(AddShortToEvent())
 
     #if DEBUG
         // Always automigrate dev/test
