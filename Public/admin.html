@@ -569,13 +569,14 @@ async function apiFetch(path, options = {}) {
 // ---- Date helpers ----
 function toDatetimeLocal(iso) {
     if (!iso) return '';
-    // "2026-02-07T22:00:00Z" -> "2026-02-07T22:00"
-    return iso.slice(0, 16).replace(' ', 'T');
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function toISO(local) {
     if (!local) return '';
-    return local + ':00Z';
+    return new Date(local).toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
 function formatDate(iso) {
