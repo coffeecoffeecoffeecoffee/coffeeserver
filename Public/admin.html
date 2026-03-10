@@ -685,8 +685,7 @@ async function loadEvents() {
                     .sort((a, b) => new Date(a.start_at) - new Date(b.start_at));
                 const past = all
                     .filter(e => new Date(e.end_at) < now)
-                    .sort((a, b) => new Date(b.start_at) - new Date(a.start_at))
-                    .slice(0, 3);
+                    .sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
                 return { group, upcoming, past };
             })
         );
@@ -703,7 +702,15 @@ async function loadEvents() {
                     rows += upcoming.map(e => eventRowHtml(e)).join('');
                 } else {
                     rows += `<div style="color:var(--text-color-secondary);font-size:0.85rem;padding:0.5rem 0 0.75rem">No upcoming events</div>`;
-                    rows += past.map(e => eventRowHtml(e, true)).join('');
+                }
+                if (past.length > 0) {
+                    const groupIdAttr = escHtml(group.id);
+                    rows += `<div>
+                        <button class="btn btn-secondary btn-sm" style="margin-bottom:0.5rem" data-past-toggle="${groupIdAttr}">Show ${past.length} past event${past.length === 1 ? '' : 's'}</button>
+                        <div id="past-${groupIdAttr}" style="display:none">
+                            ${past.map(e => eventRowHtml(e, true)).join('')}
+                        </div>
+                    </div>`;
                 }
                 return `<div class="group-section">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
@@ -1045,6 +1052,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('events-list').addEventListener('click', e => {
         const newBtn = e.target.closest('[data-new-group]');
         if (newBtn) { openCreate(newBtn.dataset.newGroup); return; }
+        const toggleBtn = e.target.closest('[data-past-toggle]');
+        if (toggleBtn) {
+            const container = document.getElementById('past-' + toggleBtn.dataset.pastToggle);
+            const open = container.style.display !== 'none';
+            container.style.display = open ? 'none' : 'block';
+            toggleBtn.textContent = open ? toggleBtn.textContent.replace('Hide', 'Show') : toggleBtn.textContent.replace('Show', 'Hide');
+            return;
+        }
         const row = e.target.closest('.event-row');
         if (row) openEdit(row.dataset.id);
     });
