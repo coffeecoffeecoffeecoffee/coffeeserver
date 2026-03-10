@@ -726,7 +726,7 @@ async function loadEvents() {
 
 function eventRowHtml(e, past = false) {
     const thumb = e.image_url
-        ? `<img class="event-thumb" src="${escHtml(e.image_url)}" alt="" onerror="this.style.display='none;this.nextElementSibling.style.display='flex'">`
+        ? `<img class="event-thumb" src="${escHtml(e.image_url)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
         : `<div class="event-thumb-placeholder">☕</div>`;
 
     const badge = e.image_url
