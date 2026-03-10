@@ -524,7 +524,7 @@ async function rehostImage() {
 
         const uploadRes = await apiFetch('/api/v2/media/upload', {
             method: 'POST',
-            headers: authHeaders({ 'Content-Type': contentType }),
+            headers: authHeaders({ 'Content-Type': contentType, 'File-Name': filename }),
             body: blob,
         });
         if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
