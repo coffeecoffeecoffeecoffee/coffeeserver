@@ -172,6 +172,108 @@ extension InterestGroupController {
         )
     }
     
+    func webViewEvent(req: Request) async throws -> Response {
+        let group = try await fetch(req: req)
+        guard let eventShort = req.parameters.get("eventShort") else {
+            throw Abort(.badRequest, reason: "No event short name provided")
+        }
+
+        let groupID = try group.requireID()
+
+        // Try to match event by short field, then fall back to UUID match
+        let event: Event
+        if let eventUUID = UUID(eventShort),
+           let foundEvent = try await Event.query(on: req.db)
+               .filter(\.$group.$id == groupID)
+               .filter(\.$id == eventUUID)
+               .with(\.$venue)
+               .first() {
+            event = foundEvent
+        } else if let foundEvent = try await Event.query(on: req.db)
+               .filter(\.$group.$id == groupID)
+               .filter(\.$short == eventShort)
+               .with(\.$venue)
+               .first() {
+            event = foundEvent
+        } else {
+            throw Abort(.notFound)
+        }
+
+        let content = Div {
+            Header {
+                Link(url: "/") {
+                    Image(url: "/logo-long.png", description: "Home")
+                        .class("header-image")
+                }
+                H1(group.name)
+                if let groupID = try? group.requireID(),
+                   let hostName = req.headerHostName() {
+                    Link(url: calendarURLString(hostName, groupID: groupID)) {
+                        Image("/icon-calendar.png")
+                        Text("Subscribe to Calendar")
+                    }
+                    .class("white-button")
+                }
+            }
+            Div {
+                coffeeEventDetailView(event, group: group)
+            }.id("coffee-groups")
+        }
+
+        return WebPage(content).response(
+            title: event.name,
+            ogPath: req.headerHostName()?.appending("/\(group.short)/\(event.short ?? eventShort)"),
+            ogImagePath: event.imageURL ?? group.imageURL
+        )
+    }
+
+    func coffeeEventDetailView(_ event: Event, group: InterestGroup) -> any Component {
+        Div {
+            Div {
+                Link(url: "/\(group.short)") {
+                    Text(group.name)
+                }
+                .class("white-button")
+            }.class("coffee-group")
+            Div {
+                Div {
+                    H2(event.name)
+                    Div {
+                        Paragraph(event.startAt.formattedWith())
+                        Paragraph("to \(event.endAt.formattedWith())")
+                    }
+                    Div {
+                        H4(event.venue.name)
+                        if let locationDescription = event.venue.location?.title {
+                            Div {
+                                Span(locationDescription)
+                            }
+                            .class("location-description")
+                        }
+                    }.class("details")
+                    if let notes = event.notes, !notes.isEmpty {
+                        Div {
+                            Paragraph(notes)
+                        }.class("event-notes")
+                    }
+                }.class("event-detail")
+            }
+            .class("coffee-group")
+            .style("""
+            background-image: linear-gradient(
+                0deg,
+                rgba(2, 0, 36, 0.5) 0%,
+                rgba(1, 0, 18, 0.0) 75%,
+                rgba(1, 0, 18, 0.0) 85%,
+                rgba(2, 0, 36, 0.8) 100%
+            ),
+            url('\(event.imageURL ?? group.imageURL ?? "/default-coffee.webp")');
+            background-size: cover;
+            """)
+        }
+    }
+
+
     private func location(for event: Event) -> String {
         let venue = event.venue
         if let mapsURL = venue.url {

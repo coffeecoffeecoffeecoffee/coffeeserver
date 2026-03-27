@@ -5,6 +5,7 @@ import Vapor
 struct EventData: EventRepresentable, Codable {
     var id: UUID?
     var name: String
+    var short: String?
     var groupID: UUID
     var venue: Venue
     var imageURL: ImageURL?
@@ -16,6 +17,7 @@ struct EventData: EventRepresentable, Codable {
         case id
         case groupID = "group_id"
         case name
+        case short
         case imageURL = "image_url"
         case startAt = "start_at"
         case endAt = "end_at"
@@ -56,6 +58,7 @@ extension EventData {
         let newEvent = Event(
             id: id,
             name: name,
+            short: short,
             group: try group.requireID(),
             venue: try thisVenue.requireID(),
             imageURL: imageURL,
