@@ -13,11 +13,7 @@ struct VenueMediaTests {
     @Test("Admin uploads media to a Venue and retrieves it")
     func uploadAndRetrieveVenueMedia() async throws {
         try await withApp(configure: configure) { app in
-            let adminJWT = try await login(
-                app: app,
-                email: try #require(Environment.get("SERVER_ADMIN_EMAIL")),
-                password: try #require(Environment.get("SERVER_ADMIN_PASSWORD"))
-            )
+            let adminJWT = try await loginAsAdmin(app: app)
             let venue = Venue(name: "Blue Bottle")
             try await venue.save(on: app.db)
             let venueID = try venue.requireID()
@@ -108,20 +104,5 @@ struct VenueMediaTests {
                 #expect(res.status == .notFound)
             }
         }
-    }
-
-    private func login(app: Application, email: String, password: String) async throws -> String {
-        let encodedLogin = Data("\(email):\(password)".utf8).base64EncodedString()
-        var token: String?
-        try await app.testing().test(
-            .POST,
-            "/api/v2/users/login",
-            headers: ["Authorization": "Basic \(encodedLogin)"]
-        ) { res async in
-            #expect(res.status == .ok)
-            let json = try? JSONDecoder().decode([String: String].self, from: Data(buffer: res.body))
-            token = json?["jwt-token"]
-        }
-        return try #require(token)
     }
 }

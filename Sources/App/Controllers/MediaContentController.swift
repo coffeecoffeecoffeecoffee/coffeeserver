@@ -12,10 +12,11 @@ import Vapor
 final class MediaContentController: Sendable, RouteCollection {
     // req.application.directory.resourcesDirectory.appending("media")
     private let mediaDirectoryPath: String
-    private let maxUploadSize: Int64 = 1024 * 1024 * 1024
+    private let maxUploadSize: Int64
 
-    init(mediaPath: String) {
+    init(mediaPath: String, maxUploadSize: Int64 = MediaUploadConfiguration.defaultMaxUploadSize) {
         self.mediaDirectoryPath = mediaPath
+        self.maxUploadSize = maxUploadSize
     }
 
     func boot(routes: Vapor.RoutesBuilder) throws {
