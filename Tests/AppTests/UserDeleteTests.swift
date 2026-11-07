@@ -72,8 +72,7 @@ struct UserDeleteTests {
     func adminCannotSelfDelete() async throws {
         try await withApp(configure: configure) { app in
             let adminJWT = try await loginAsAdmin(app: app)
-            let adminEmail = try #require(Environment.get("SERVER_ADMIN_EMAIL"))
-            let admin = try #require(try await User.query(on: app.db).filter(\.$email == adminEmail).first())
+            let admin = try await serverAdminUser(app: app)
             let adminID = try admin.requireID()
 
             try await app.testing().test(
@@ -171,8 +170,9 @@ struct UserDeleteTests {
         return user
     }
 
+    /// The account `AddSuperUser` creates. Its email is stored lowercased, whatever `SERVER_ADMIN_EMAIL`'s case.
     private func serverAdminUser(app: Application) async throws -> User {
-        let adminEmail = try #require(Environment.get("SERVER_ADMIN_EMAIL"))
+        let adminEmail = try #require(Environment.get("SERVER_ADMIN_EMAIL")).lowercased()
         return try #require(try await User.query(on: app.db).filter(\.$email == adminEmail).first())
     }
 
