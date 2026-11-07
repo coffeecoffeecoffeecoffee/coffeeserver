@@ -143,7 +143,7 @@ struct UserController: RouteCollection {
         }
         return try await User.query(on: db)
             .join(siblings: \.$tags)
-            .filter(Tag.self, \.$name == "admin")
+            .filter(Tag.self, \.$name == Tag.adminTagName)
             .first()
     }
 }

@@ -16,7 +16,7 @@ extension User {
     /// Whether this user has the `admin` tag.
     func isAdmin(on db: Database) async throws -> Bool {
         try await $tags.query(on: db)
-            .filter(\.$name == "admin")
+            .filter(\.$name == Tag.adminTagName)
             .count() > 0
     }
 }

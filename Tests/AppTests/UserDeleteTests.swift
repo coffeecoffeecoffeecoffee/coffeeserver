@@ -53,7 +53,7 @@ struct UserDeleteTests {
     func adminCannotDeleteAdmin() async throws {
         try await withApp(configure: configure) { app in
             let adminJWT = try await loginAsAdmin(app: app)
-            let otherAdmin = try await makeUser(app: app, email: "other-admin@example.com", tags: ["admin"])
+            let otherAdmin = try await makeUser(app: app, email: "other-admin@example.com", tags: [App.Tag.adminTagName])
             let otherAdminID = try otherAdmin.requireID()
 
             try await app.testing().test(
@@ -64,7 +64,7 @@ struct UserDeleteTests {
             }
 
             let remaining = try #require(try await User.find(otherAdminID, on: app.db), "Admin is not deleted")
-            #expect(try await remaining.$tags.get(on: app.db).map(\.name) == ["admin"], "Admin keeps the admin tag")
+            #expect(try await remaining.$tags.get(on: app.db).map(\.name) == [App.Tag.adminTagName], "Admin keeps the admin tag")
         }
     }
 
