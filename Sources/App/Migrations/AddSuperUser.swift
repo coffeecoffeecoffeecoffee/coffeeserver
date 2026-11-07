@@ -38,7 +38,9 @@ struct AddSuperUser: AsyncMigration {
             throw Abort(.internalServerError, reason: "Could not get SERVER_ADMIN_PASSWORD from Environment")
         }
         let passwordHash = try Bcrypt.hash(adminPassword)
-        let newAdmin = User(name: adminName, email: adminEmail, passwordHash: passwordHash)
+        let newAdmin = User(name: adminName,
+                            email: adminEmail.lowercased(),
+                            passwordHash: passwordHash)
         do {
             try await newAdmin.save(on: database)
             return
