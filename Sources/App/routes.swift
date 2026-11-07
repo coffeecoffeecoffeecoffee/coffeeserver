@@ -4,11 +4,15 @@ import Vapor
 
 func routes(_ app: Application) throws {
     let interestGroupController = InterestGroupController()
-    app.get { req async throws in
+    // Web pages carry a session cookie so they can show who is signed in. The JSON API does not.
+    let web = app.grouped(WebSession.middleware(for: app))
+    web.get { req async throws in
         try await interestGroupController.webView(req: req)
     }
-    
-    let legacyGroupRoute = app.routes.grouped(":groupID")
+    try web.register(collection: AccountWebController())
+    interestGroupController.bootWeb(routes: web)
+
+    let legacyGroupRoute = web.grouped(":groupID")
     legacyGroupRoute.get("ical", use: interestGroupController.calendar)
     legacyGroupRoute.get(use: interestGroupController.webViewSingle)
 

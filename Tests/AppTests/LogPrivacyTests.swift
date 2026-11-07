@@ -33,6 +33,31 @@ struct LogPrivacyTests {
         }
     }
 
+    @Test("Web sign-in and sign-up don't log emails or passwords")
+    func webAccountFormsAreNotLogged() async throws {
+        let logs = LogCapture()
+        try await withCapturingApp(logs) { app in
+            try await createUser(app: app, email: email)
+            let formHeaders: HTTPHeaders = ["Content-Type": "application/x-www-form-urlencoded"]
+            let encodedEmail = email.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? email
+            let encodedPassword = password.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? password
+
+            for body in [
+                "email=\(encodedEmail)&password=wrong",                       // failed sign-in
+                "email=\(encodedEmail)&password=\(encodedPassword)",          // successful sign-in
+            ] {
+                try await app.testing().test(.POST, "/signin", headers: formHeaders, body: ByteBuffer(string: body)) { _ async in }
+            }
+            // Sign-up with an email that's taken
+            let signUp = "name=Someone&email=\(encodedEmail)&password=\(encodedPassword)&confirmPassword=\(encodedPassword)"
+            try await app.testing().test(.POST, "/signup", headers: formHeaders, body: ByteBuffer(string: signUp)) { res async in
+                #expect(res.status == .badRequest)
+            }
+
+            logs.expectNotLogged(email, encodedEmail, password, encodedPassword)
+        }
+    }
+
     @Test("Duplicate emails on sign-up and profile update aren't logged")
     func duplicateEmailsAreNotLogged() async throws {
         let logs = LogCapture()

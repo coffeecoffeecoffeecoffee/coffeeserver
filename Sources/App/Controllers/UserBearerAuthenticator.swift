@@ -16,16 +16,12 @@ struct UserBearerAuthenticator: AsyncBearerAuthenticator {
         basic: BasicAuthorization,
         for request: Request
     ) async throws {
-        let username = basic.username
-        let password = basic.password
-        guard let user = try await User.query(on: request.db)
-            .filter(\.$email == username)
-            .first() else {
-            request.logger.warning("USER LOGIN FAILED (WRONG EMAIL)")
-            throw Abort(.forbidden)
-        }
-        guard try Bcrypt.verify(password, created: user.passwordHash) else {
-            request.logger.warning("USER LOGIN FAILED (PASSWORD)")
+        guard let user = try await User.authenticate(
+            email: basic.username,
+            password: basic.password,
+            on: request.db
+        ) else {
+            request.logger.warning("USER LOGIN FAILED")
             throw Abort(.forbidden)
         }
         request.auth.login(user)

@@ -2,14 +2,17 @@ import Fluent
 import Vapor
 
 struct InterestGroupController: RouteCollection {
-    func boot(routes: RoutesBuilder) throws {
+    /// Registers the HTML group pages. Call with the web route group so pages carry the session.
+    func bootWeb(routes: RoutesBuilder) {
         let groupsHTML = routes.grouped("groups")
         groupsHTML.get(use: webView)
         groupsHTML.group(":groupID") { group in
             group.get(use: webViewSingle)
             group.get("calendar.ics", use: calendar)
         }
-        
+    }
+
+    func boot(routes: RoutesBuilder) throws {
         let groupsAPI = routes.grouped("api", "v2", "groups")
         groupsAPI.get(use: index)
         groupsAPI.post(use: create)
@@ -18,6 +21,13 @@ struct InterestGroupController: RouteCollection {
             group.put(use: update)
             group.delete(use: delete)
             group.get("events", use: groupEvents)
+        }
+    }
+
+    /// Group pages live at `/<slug>`, beside fixed pages like `/account`, which would shadow the group.
+    private func assertSlugAvailable(_ slug: String) throws {
+        guard !AccountWebController.reservedPaths.contains(slug) else {
+            throw Abort(.badRequest, reason: "The slug \"\(slug)\" is reserved for a site page")
         }
     }
 
@@ -61,6 +71,7 @@ struct InterestGroupController: RouteCollection {
         let group = try req.content.decode(InterestGroup.self)
         // We use lowercased slugs only in urls and more importantly in the db queries
         group.short = group.short.lowercased()
+        try assertSlugAvailable(group.short)
         try await group.save(on: req.db)
         return group
     }
@@ -79,6 +90,7 @@ struct InterestGroupController: RouteCollection {
             throw Abort(.notFound)
         }
         
+        try assertSlugAvailable(newData.short.lowercased())
         group.name = newData.name
         group.short = newData.short
         if let newImageURL = newData.imageURL {
