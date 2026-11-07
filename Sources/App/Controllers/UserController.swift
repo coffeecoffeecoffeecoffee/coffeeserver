@@ -30,35 +30,18 @@ struct UserController: RouteCollection {
         return users.map { $0.publicValue() }
     }
 
-    /// Whether no user other than `userID` has `email`.
-    /// - Parameter email: an already-lowercased address, the form emails are stored and looked up in
-    private func isEmailAvailable(_ email: String, excluding userID: UUID? = nil, db: Database) async throws -> Bool {
-        let query = User.query(on: db).filter(\.$email == email)
-        if let userID {
-            query.filter(\.$id != userID)
-        }
-        return try await query.first() == nil
-    }
-
     func create(_ req: Request) async throws -> Response {
         try UserCreate.validate(content: req)
         let create = try req.content.decode(UserCreate.self)
-        guard create.password == create.confirmPassword else {
+        let user: User
+        do {
+            user = try await User.register(create, on: req.db)
+        } catch User.RegistrationError.passwordsDoNotMatch {
             throw Abort(.badRequest, reason: "Passwords did not match")
-        }
-        let email = create.email.lowercased()
-        guard let isAvailable = try? await isEmailAvailable(email, db: req.db),
-            isAvailable
-        else {
+        } catch User.RegistrationError.emailUnavailable {
             req.logger.warning("Rejected sign-up: email address belongs to another user")
             throw Abort(.badRequest)
         }
-        let user = try User(
-            name: create.name,
-            email: email,
-            passwordHash: Bcrypt.hash(create.password)
-        )
-        try await user.save(on: req.db)
         req.logger.info("User created")
         return try await user.publicValue().encodeResponse(
             status: .created,
@@ -168,7 +151,7 @@ extension UserController {
         // Emails are stored lowercased and login lowercases what's typed, so normalize before
         // checking. Excluding this user lets them keep their own address in any case.
         let email = newUpdates.email.lowercased()
-        guard let isAvailable = try? await isEmailAvailable(email, excluding: user.requireID(), db: req.db),
+        guard let isAvailable = try? await User.isEmailAvailable(email, excluding: user.requireID(), on: req.db),
             isAvailable
         else {
             req.logger.warning("Rejected email change: address belongs to another user")
