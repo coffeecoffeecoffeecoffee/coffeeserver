@@ -46,7 +46,7 @@ struct UserController: RouteCollection {
         guard let isUnique = try? await assertUnique(create.email, db: req.db),
             isUnique
         else {
-            req.logger.warning("A user with this email address exists: \(create.email)")
+            req.logger.warning("Rejected sign-up: email address belongs to another user")
             throw Abort(.badRequest)
         }
         let user = try User(
@@ -81,7 +81,7 @@ struct UserController: RouteCollection {
     func delete(_ req: Request) async throws -> HTTPStatus {
         let payload = try req.jwt.verify(as: SessionJWTToken.self)
         guard let requestingUser = try await User.find(payload.userId, on: req.db) else {
-            req.logger.info("Unauthorized user delete attempt\n\(req)")
+            req.logger.info("Unauthorized user delete attempt")
             throw Abort(.unauthorized)
         }
         guard let userIdString = req.parameters.get("userID"),
@@ -93,7 +93,7 @@ struct UserController: RouteCollection {
         let isSelfDelete = try requestingUser.requireID() == userIdToDelete
         let canDelete = try await isSelfDelete ? true : req.isAdmin()
         guard canDelete else {
-            req.logger.info("Unauthorized attempt to delete user\n\(req)")
+            req.logger.info("Unauthorized attempt to delete user")
             return .unauthorized
         }
         // Deleting an admin is deliberately not possible through the API, including an admin
@@ -165,7 +165,7 @@ extension UserController {
             guard let isUnique = try? await assertUnique(newUpdates.email, db: req.db),
                 isUnique
             else {
-                req.logger.warning("A user with this email address exists: \(newUpdates.email)")
+                req.logger.warning("Rejected email change: address belongs to another user")
                 throw Abort(.badRequest)
             }
         }
