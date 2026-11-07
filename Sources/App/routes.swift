@@ -162,9 +162,9 @@ func routes(_ app: Application) throws {
     try app.register(collection: UserController())
     try app.register(collection: TagController())
     try app.register(collection: EventController())
-    try app.register(collection: VenueController())
-    try app.register(collection: SearchController())
-    
     let mediaDirectoryPath = app.directory.publicDirectory.appending("media")
-    try app.register(collection: MediaContentController(mediaPath: mediaDirectoryPath))
+    let mediaContentController = MediaContentController(mediaPath: mediaDirectoryPath)
+    try app.register(collection: VenueController(mediaContentController: mediaContentController))
+    try app.register(collection: SearchController())
+    try app.register(collection: mediaContentController)
 }

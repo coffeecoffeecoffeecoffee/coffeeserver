@@ -49,6 +49,16 @@ final class MediaContentController: RouteCollection {
             req.logger.info("Unauthorized upload attempt:\n\(req)")
             throw Abort(.unauthorized, reason: "Must be logged in")
         }
+        return try await storeUpload(req: req, uploader: requestingUser)
+    }
+
+    /// Streams the request body to the media directory and saves a ``MediaContent`` record for it.
+    /// - Parameters:
+    ///   - req: Request with `File-Name` and `Content-Type` headers and a streamed body
+    ///   - uploader: the ``User`` who owns the upload
+    ///   - venue: optional ``Venue`` to associate the media with
+    /// - Returns: the saved ``MediaContent``
+    func storeUpload(req: Request, uploader: User, venue: Venue? = nil) async throws -> MediaContent {
         guard let rawFilename = req.headers["File-Name"].first else {
             throw Abort(.badRequest, reason: "File-Name header missing or invalid")
         }
@@ -109,7 +119,8 @@ final class MediaContentController: RouteCollection {
             rawFilename: rawFilename,
             mimeType: contentType,
             contentLength: Int(streamedLength),
-            userID: requestingUser
+            userID: uploader,
+            venue: venue
         )
         try await media.save(on: req.db)
         return media

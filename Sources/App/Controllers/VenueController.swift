@@ -2,6 +2,12 @@ import Fluent
 import Vapor
 
 final class VenueController: RouteCollection {
+    private let mediaContentController: MediaContentController
+
+    init(mediaContentController: MediaContentController) {
+        self.mediaContentController = mediaContentController
+    }
+
     func boot(routes: Vapor.RoutesBuilder) throws {
         let venuesAPI = routes.grouped("api", "v2", "venues")
         venuesAPI.get(use: index)
@@ -11,6 +17,8 @@ final class VenueController: RouteCollection {
             venue.put(use: updateVenue)
             venue.delete(use: deleteVenue)
             venue.get("events", use: venueEvents)
+            venue.get("media", use: venueMedia)
+            venue.on(.POST, "media", body: .stream, use: uploadVenueMedia)
         }
     }
     
@@ -97,5 +105,35 @@ final class VenueController: RouteCollection {
             publicEvents.append(thisEvent)
         }
         return publicEvents
+    }
+    
+    func venueMedia(req: Request) async throws -> [MediaContent] {
+        guard let venueIDString = req.parameters.get("venueID"),
+        let venueID = UUID(venueIDString) else {
+            throw Abort(.badRequest)
+        }
+        guard let venue = try await Venue.find(venueID, on: req.db) else {
+            throw Abort(.notFound)
+        }
+        return try await venue.$media.get(on: req.db)
+    }
+    
+    func uploadVenueMedia(req: Request) async throws -> MediaContent {
+        guard try await req.isAdmin() else {
+            req.logger.warning("Unauthorized Venue media upload attempt\n\(req)")
+            throw Abort(.unauthorized)
+        }
+        guard let venueIDString = req.parameters.get("venueID"),
+        let venueID = UUID(venueIDString) else {
+            throw Abort(.badRequest)
+        }
+        guard let venue = try await Venue.find(venueID, on: req.db) else {
+            throw Abort(.notFound)
+        }
+        let payload = try req.jwt.verify(as: SessionJWTToken.self)
+        guard let uploader = try await User.find(payload.userId, on: req.db) else {
+            throw Abort(.unauthorized)
+        }
+        return try await mediaContentController.storeUpload(req: req, uploader: uploader, venue: venue)
     }
 }
