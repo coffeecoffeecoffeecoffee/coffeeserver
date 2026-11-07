@@ -90,18 +90,61 @@ struct UserController: RouteCollection {
         else {
             throw Abort(.badRequest, reason: "Cannot find userID")
         }
-        if try requestingUser.requireID() == userIdToDelete {
-            try await user.delete(on: req.db)
-            req.logger.info("User requests to self-delete. UserID \(userIdString)")
-            return .noContent
+        let isSelfDelete = try requestingUser.requireID() == userIdToDelete
+        let canDelete = try await isSelfDelete ? true : req.isAdmin()
+        guard canDelete else {
+            req.logger.info("Unauthorized attempt to delete user\n\(req)")
+            return .unauthorized
         }
-        if try await req.isAdmin() {
-            req.logger.info("Admin delete of user \(userIdString)")
-            try await user.delete(on: req.db)
-            return .noContent
+        // Deleting an admin is deliberately not possible through the API, including an admin
+        // deleting themselves. Remove the admin tag directly in the database first.
+        let targetIsAdmin = try await user.isAdmin(on: req.db)
+        guard !targetIsAdmin else {
+            req.logger.warning("Refused to delete admin user \(userIdString)")
+            throw Abort(.forbidden, reason: "Admin users cannot be deleted")
         }
-        req.logger.info("Unauthorized attempt to delete user\n\(req)")
-        return .unauthorized
+        // Uploads outlive their owner: an admin delete hands them to that admin, and a
+        // self-delete hands them to the server admin.
+        let mediaRecipient = isSelfDelete ? try await serverAdmin(on: req.db) : requestingUser
+        try await deleteUser(user, handingMediaTo: mediaRecipient, on: req.db)
+        req.logger.info(isSelfDelete
+            ? "User requests to self-delete. UserID \(userIdString)"
+            : "Admin delete of user \(userIdString)")
+        return .noContent
+    }
+
+    /// Hands the user's uploads to `recipient`, removes their tag links, then deletes the user, all or nothing.
+    /// - Throws: `Abort(.conflict)` if the user has uploads and `recipient` is `nil`
+    private func deleteUser(_ user: User, handingMediaTo recipient: User?, on db: Database) async throws {
+        let userID = try user.requireID()
+        let recipientID = try recipient?.requireID()
+        try await db.transaction { transaction in
+            let ownedMedia = MediaContent.query(on: transaction).filter(\.$user.$id == userID)
+            let mediaLinks = UserMediaContent.query(on: transaction).filter(\.$user.$id == userID)
+            if let recipientID {
+                try await ownedMedia.set(\.$user.$id, to: recipientID).update()
+                try await mediaLinks.set(\.$user.$id, to: recipientID).update()
+            } else {
+                guard try await ownedMedia.count() == 0 else {
+                    throw Abort(.conflict, reason: "User has uploaded media and there is no admin to hand it to")
+                }
+                try await mediaLinks.delete()
+            }
+            try await user.$tags.detachAll(on: transaction)
+            try await user.delete(on: transaction)
+        }
+    }
+
+    /// The account created by ``AddSuperUser``, or any admin if that account has been renamed.
+    private func serverAdmin(on db: Database) async throws -> User? {
+        if let named = try await User.query(on: db).filter(\.$name == AddSuperUser().adminName).first(),
+           try await named.isAdmin(on: db) {
+            return named
+        }
+        return try await User.query(on: db)
+            .join(siblings: \.$tags)
+            .filter(Tag.self, \.$name == Tag.adminTagName)
+            .first()
     }
 }
 

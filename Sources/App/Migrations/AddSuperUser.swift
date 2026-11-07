@@ -3,7 +3,6 @@ import Vapor
 
 struct AddSuperUser: AsyncMigration {
     let adminName = "Server Admin"
-    let adminTagName = "admin"
 
     func prepare(on database: Database) async throws {
         try await addAdminUser(on: database)
@@ -19,7 +18,7 @@ struct AddSuperUser: AsyncMigration {
         }
         try? await adminUser.$tags.detachAll(on: database)
         try? await Tag.query(on: database)
-            .filter(\.$name == adminTagName)
+            .filter(\.$name == Tag.adminTagName)
             .delete()
         try? await adminUser.delete(on: database)
     }
@@ -50,14 +49,14 @@ struct AddSuperUser: AsyncMigration {
     
     func addAdminTag(on database: Database) async throws {
         let maybeAdminTag = try await Tag.query(on: database)
-            .filter(\.$name == adminTagName)
+            .filter(\.$name == Tag.adminTagName)
             .first()
         guard maybeAdminTag == nil else {
             print("Admin tag already exists")
             return
         }
         
-        let newAdminTag = Tag(name: adminTagName)
+        let newAdminTag = Tag(name: Tag.adminTagName)
         do {
             try await newAdminTag.save(on: database)
             return
@@ -68,7 +67,7 @@ struct AddSuperUser: AsyncMigration {
     
     func addAdminTagToAdminUser(on database: Database) async throws {
         let adminTag = try await Tag.query(on: database)
-            .filter(\.$name == adminTagName)
+            .filter(\.$name == Tag.adminTagName)
             .first()
         let admin = try await User.query(on: database)
             .filter(\.$name == adminName)

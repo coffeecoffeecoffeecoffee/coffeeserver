@@ -4,6 +4,9 @@ import Vapor
 final class Tag: Model, Content, @unchecked Sendable {
     static let schema = "tags"
 
+    /// Name of the tag that grants admin privileges
+    static let adminTagName = "admin"
+
     @ID(key: .id)
     var id: UUID?
 
