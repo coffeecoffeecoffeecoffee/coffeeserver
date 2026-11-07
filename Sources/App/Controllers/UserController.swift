@@ -30,11 +30,14 @@ struct UserController: RouteCollection {
         return users.map { $0.publicValue() }
     }
 
-    private func assertUnique(_ email: String, db: Database) async throws -> Bool {
-        let maybeExistingUser = try await User.query(on: db)
-            .filter(\.$email == email)
-            .first()
-        return maybeExistingUser == nil ? true : false
+    /// Whether no user other than `userID` has `email`.
+    /// - Parameter email: an already-lowercased address, the form emails are stored and looked up in
+    private func isEmailAvailable(_ email: String, excluding userID: UUID? = nil, db: Database) async throws -> Bool {
+        let query = User.query(on: db).filter(\.$email == email)
+        if let userID {
+            query.filter(\.$id != userID)
+        }
+        return try await query.first() == nil
     }
 
     func create(_ req: Request) async throws -> Response {
@@ -43,15 +46,16 @@ struct UserController: RouteCollection {
         guard create.password == create.confirmPassword else {
             throw Abort(.badRequest, reason: "Passwords did not match")
         }
-        guard let isUnique = try? await assertUnique(create.email, db: req.db),
-            isUnique
+        let email = create.email.lowercased()
+        guard let isAvailable = try? await isEmailAvailable(email, db: req.db),
+            isAvailable
         else {
             req.logger.warning("Rejected sign-up: email address belongs to another user")
             throw Abort(.badRequest)
         }
         let user = try User(
             name: create.name,
-            email: create.email.lowercased(),
+            email: email,
             passwordHash: Bcrypt.hash(create.password)
         )
         try await user.save(on: req.db)
@@ -161,16 +165,17 @@ extension UserController {
         guard newUpdates.password == newUpdates.confirmPassword else {
             throw Abort(.badRequest, reason: "Passwords did not match")
         }
-        if user.$email.wrappedValue != newUpdates.email {
-            guard let isUnique = try? await assertUnique(newUpdates.email, db: req.db),
-                isUnique
-            else {
-                req.logger.warning("Rejected email change: address belongs to another user")
-                throw Abort(.badRequest)
-            }
+        // Emails are stored lowercased and login lowercases what's typed, so normalize before
+        // checking. Excluding this user lets them keep their own address in any case.
+        let email = newUpdates.email.lowercased()
+        guard let isAvailable = try? await isEmailAvailable(email, excluding: user.requireID(), db: req.db),
+            isAvailable
+        else {
+            req.logger.warning("Rejected email change: address belongs to another user")
+            throw Abort(.badRequest)
         }
         user.name = newUpdates.name
-        user.email = newUpdates.email
+        user.email = email
         user.passwordHash = try Bcrypt.hash(newUpdates.password)
         try await user.update(on: req.db)
         return user.privateValue()
