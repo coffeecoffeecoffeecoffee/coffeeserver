@@ -18,11 +18,9 @@ func routes(_ app: Application) throws {
         let hostName = req.url.host ?? "NOT DEFINED"
         let hostHeaderValue = req.headers.first(name: "Host") ?? "No Host header"
         let urlString = req.url.string
-        let reqHeaders = req.headers.reduce("") { key, value in
-            """
-            \(key): \(value)
-            """
-        }
+        let reqHeaders = req.headers.redactingCredentials()
+            .map { name, value in "\(name): \(value)" }
+            .joined(separator: "\n")
         
         var os = ""
         let uptimeFormatted = UptimeFormatter.formattedUptime(from: ProcessInfo.processInfo.systemUptime)
@@ -170,4 +168,18 @@ func routes(_ app: Application) throws {
     try app.register(collection: VenueController(mediaContentController: mediaContentController))
     try app.register(collection: SearchController())
     try app.register(collection: mediaContentController)
+}
+
+extension HTTPHeaders {
+    /// Headers that carry credentials and must never be echoed back or logged.
+    static let credentialHeaderNames: [HTTPHeaders.Name] = [.authorization, .proxyAuthorization, .cookie]
+
+    /// A copy with the values of ``credentialHeaderNames`` replaced by `<redacted>`.
+    func redactingCredentials() -> HTTPHeaders {
+        var redacted = self
+        for name in Self.credentialHeaderNames where redacted.contains(name: name) {
+            redacted.replaceOrAdd(name: name, value: "<redacted>")
+        }
+        return redacted
+    }
 }
