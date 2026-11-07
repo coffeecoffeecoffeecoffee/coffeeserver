@@ -88,7 +88,7 @@ extension InterestGroupController {
     func webView(req: Request) async throws -> Response {
         let sortedGroupEvents = try await interestGroupsAndEvents(req: req)
         guard sortedGroupEvents.count > 0 else {
-            return WebPage(NoGroupsView()).response()
+            return WebPage(NoGroupsView()).response(for: req)
         }
         let list = Div {
             Header {
@@ -105,7 +105,7 @@ extension InterestGroupController {
             .id("coffee-groups")
         }
         .class("wrapper")
-        return WebPage(list).response()
+        return WebPage(list).response(for: req)
     }
     
     
@@ -166,6 +166,7 @@ extension InterestGroupController {
         }
         
         return WebPage(content).response(
+            for: req,
             title: group.name,
             ogPath: req.headerHostName()?.appending(group.short),
             ogImagePath: group.imageURL

@@ -18,6 +18,7 @@ public func configure(_ app: Application) throws {
     app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
     try configureDatabase(on: app)
+    WebSession.configure(app)
     try databaseMigrations(on: app)
 
     try configureJWT(on: app)
@@ -82,6 +83,7 @@ func databaseMigrations(on app: Application) throws {
     app.migrations.add(CreateVenueMediaContent())
     app.migrations.add(PopulateInterestGroups())
     app.migrations.add(AddNotesToEvent())
+    app.migrations.add(SessionRecord.migration)
 
     #if DEBUG
         // Always automigrate dev/test
