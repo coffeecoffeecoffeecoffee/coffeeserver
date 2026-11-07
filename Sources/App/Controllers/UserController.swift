@@ -90,18 +90,36 @@ struct UserController: RouteCollection {
         else {
             throw Abort(.badRequest, reason: "Cannot find userID")
         }
-        if try requestingUser.requireID() == userIdToDelete {
-            try await user.delete(on: req.db)
-            req.logger.info("User requests to self-delete. UserID \(userIdString)")
-            return .noContent
+        let isSelfDelete = try requestingUser.requireID() == userIdToDelete
+        let canDelete = try await isSelfDelete ? true : req.isAdmin()
+        guard canDelete else {
+            req.logger.info("Unauthorized attempt to delete user\n\(req)")
+            return .unauthorized
         }
-        if try await req.isAdmin() {
-            req.logger.info("Admin delete of user \(userIdString)")
-            try await user.delete(on: req.db)
-            return .noContent
+        // Deleting an admin is deliberately not possible through the API, including an admin
+        // deleting themselves. Remove the admin tag directly in the database first.
+        let targetIsAdmin = try await user.isAdmin(on: req.db)
+        guard !targetIsAdmin else {
+            req.logger.warning("Refused to delete admin user \(userIdString)")
+            throw Abort(.forbidden, reason: "Admin users cannot be deleted")
         }
-        req.logger.info("Unauthorized attempt to delete user\n\(req)")
-        return .unauthorized
+        try await deleteUserAndLinks(user, on: req.db)
+        req.logger.info(isSelfDelete
+            ? "User requests to self-delete. UserID \(userIdString)"
+            : "Admin delete of user \(userIdString)")
+        return .noContent
+    }
+
+    /// Removes the user's tag and media links, then the user, all or nothing.
+    private func deleteUserAndLinks(_ user: User, on db: Database) async throws {
+        let userID = try user.requireID()
+        try await db.transaction { transaction in
+            try await user.$tags.detachAll(on: transaction)
+            try await UserMediaContent.query(on: transaction)
+                .filter(\.$user.$id == userID)
+                .delete()
+            try await user.delete(on: transaction)
+        }
     }
 }
 

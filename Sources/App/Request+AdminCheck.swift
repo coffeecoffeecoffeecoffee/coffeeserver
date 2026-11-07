@@ -5,17 +5,18 @@ import Vapor
 extension Request {
     func isAdmin() async throws -> Bool {
         let jwtPayload = try jwt.verify(as: SessionJWTToken.self)
-        async let requestUserTags = User.find(jwtPayload.userId, on: db)?
-            .$tags
-            .get(on: db)
-        async let adminTag = try Tag.query(on: db)
-            .filter(\.$name == "admin")
-            .first()
-        guard let userTags = try await requestUserTags,
-              let adminTagID = try await adminTag?.requireID(),
-              userTags.contains(where: { $0.id == adminTagID }) else {
+        guard let user = try await User.find(jwtPayload.userId, on: db) else {
             return false
         }
-        return true
+        return try await user.isAdmin(on: db)
+    }
+}
+
+extension User {
+    /// Whether this user has the `admin` tag.
+    func isAdmin(on db: Database) async throws -> Bool {
+        try await $tags.query(on: db)
+            .filter(\.$name == "admin")
+            .count() > 0
     }
 }
