@@ -12,7 +12,6 @@ struct EventController: RouteCollection {
             event.delete(use: delete)
             event.get(use: fetchEvent)
         }
-//        eventsAPI.post("bulk", use: bulkAddEvents)
         eventsAPI.on(.POST, "bulk", body: .collect(maxSize: 150_000), use: bulkAddEvents)
     }
 
@@ -50,17 +49,17 @@ struct EventController: RouteCollection {
         let eventData = try req.content.decode(EventData.self)
         
         let groupID = eventData.groupID
-        let existingGroup = try await InterestGroup.find(groupID, on: req.db)
+        async let existingGroup = try await InterestGroup.find(groupID, on: req.db)
         
         guard let venueID = eventData.venue.id else {
             throw Abort(.badRequest, reason: "Venue ID is required")
         }
-        let existingVenue = try await Venue.find(venueID, on: req.db)
+        async let existingVenue = try await Venue.find(venueID, on: req.db)
         
-        guard let interestGroup = existingGroup else {
+        guard let interestGroup = try await existingGroup else {
             throw Abort(.notFound, reason: "No group with id \(groupID)")
         }
-        guard let venue = existingVenue else {
+        guard let venue = try await existingVenue else {
             throw Abort(.notFound, reason: "No venue with id \(venueID)")
         }
         
