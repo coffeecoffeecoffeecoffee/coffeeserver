@@ -28,7 +28,7 @@ final class VenueController: RouteCollection {
     
     func create(req: Request) async throws -> Venue {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized venue creation attempt\n\(req)")
+            req.logger.warning("Unauthorized venue creation attempt")
             throw Abort(.unauthorized)
         }
         let venue = try req.content.decode(Venue.self)
@@ -49,7 +49,7 @@ final class VenueController: RouteCollection {
     
     func updateVenue(req: Request) async throws -> Venue {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized Venue update attempt\n\(req)")
+            req.logger.warning("Unauthorized Venue update attempt")
             throw Abort(.unauthorized)
         }
         guard let venueIDString = req.parameters.get("venueID"),
@@ -69,7 +69,7 @@ final class VenueController: RouteCollection {
     
     func deleteVenue(req: Request) async throws -> HTTPStatus {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized Venue delete attempt\n\(req)")
+            req.logger.warning("Unauthorized Venue delete attempt")
             throw Abort(.unauthorized)
         }
         guard let venueIDString = req.parameters.get("venueID"),
@@ -120,7 +120,7 @@ final class VenueController: RouteCollection {
     
     func uploadVenueMedia(req: Request) async throws -> MediaContent {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized Venue media upload attempt\n\(req)")
+            req.logger.warning("Unauthorized Venue media upload attempt")
             throw Abort(.unauthorized)
         }
         guard let venueIDString = req.parameters.get("venueID"),

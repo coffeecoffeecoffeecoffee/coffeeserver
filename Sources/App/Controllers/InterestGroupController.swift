@@ -55,7 +55,7 @@ struct InterestGroupController: RouteCollection {
 
     func create(req: Request) async throws -> InterestGroup {
         guard try await req.isAdmin() else {
-            req.logger.info("Failed Group create \(req)")
+            req.logger.info("Failed Group create")
             throw Abort(.unauthorized)
         }
         let group = try req.content.decode(InterestGroup.self)
@@ -67,7 +67,7 @@ struct InterestGroupController: RouteCollection {
     
     func update(req: Request) async throws -> InterestGroup {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized update attempt\n\t\(req)")
+            req.logger.warning("Unauthorized update attempt")
             throw Abort(.unauthorized)
         }
         guard let newData = try? req.content.decode(InterestGroup.self),
@@ -94,7 +94,7 @@ struct InterestGroupController: RouteCollection {
 
     func delete(req: Request) async throws -> HTTPStatus {
         guard try await req.isAdmin() else {
-            req.logger.info("Failed Group delete \(req)")
+            req.logger.info("Failed Group delete")
             throw Abort(.unauthorized)
         }
         guard let group = try await InterestGroup.find(req.parameters.get("groupID"), on: req.db) else {

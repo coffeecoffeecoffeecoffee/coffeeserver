@@ -47,7 +47,7 @@ final class MediaContentController: Sendable, RouteCollection {
     func uploadMedia(req: Request) async throws -> MediaContent {
         let payload = try req.jwt.verify(as: SessionJWTToken.self)
         guard let requestingUser = try await User.find(payload.userId, on: req.db) else {
-            req.logger.info("Unauthorized upload attempt:\n\(req)")
+            req.logger.info("Unauthorized upload attempt")
             throw Abort(.unauthorized, reason: "Must be logged in")
         }
         return try await storeUpload(req: req, uploader: requestingUser)

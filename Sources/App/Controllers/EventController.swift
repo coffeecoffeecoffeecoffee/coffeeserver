@@ -43,7 +43,7 @@ struct EventController: RouteCollection {
 
     func create(req: Request) async throws -> EventData {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized event creation\n\(req)")
+            req.logger.warning("Unauthorized event creation")
             throw Abort(.unauthorized)
         }
         let eventData = try req.content.decode(EventData.self)
@@ -84,7 +84,7 @@ struct EventController: RouteCollection {
     
     func update(req: Request) async throws -> EventData {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized Event edit request\n\(req)")
+            req.logger.warning("Unauthorized Event edit request")
             throw Abort(.unauthorized)
         }
         guard let eventIDString = req.parameters.get("eventID"),
@@ -116,7 +116,7 @@ struct EventController: RouteCollection {
 
     func delete(req: Request) async throws -> HTTPStatus {
         guard try await req.isAdmin() else {
-            req.logger.warning("Unauthorized Event delete request\n\(req)")
+            req.logger.warning("Unauthorized Event delete request")
             throw Abort(.unauthorized)
         }
         guard let eventIDString = req.parameters.get("eventID"),
