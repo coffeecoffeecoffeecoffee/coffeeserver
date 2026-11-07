@@ -106,6 +106,52 @@ struct UserDeleteTests {
         }
     }
 
+    @Test("Admin deleting a user with uploads takes ownership of them")
+    func adminDeleteHandsMediaToAdmin() async throws {
+        try await withApp(configure: configure) { app in
+            let adminJWT = try await loginAsAdmin(app: app)
+            let admin = try await serverAdminUser(app: app)
+            let user = try await makeUser(app: app, email: "uploader@example.com", tags: ["regular"])
+            let userID = try user.requireID()
+            let (mediaID, linkID) = try await makeUpload(app: app, owner: user)
+
+            try await app.testing().test(
+                .DELETE, "/api/v2/users/\(userID)",
+                headers: ["Authorization": "Bearer \(adminJWT)"]
+            ) { res async in
+                #expect(res.status == .noContent)
+            }
+
+            #expect(try await User.find(userID, on: app.db) == nil, "User is deleted")
+            let media = try #require(try await MediaContent.find(mediaID, on: app.db), "Upload is kept")
+            #expect(media.$user.id == admin.id, "Upload now belongs to the deleting admin")
+            let link = try #require(try await UserMediaContent.find(linkID, on: app.db), "Media link is kept")
+            #expect(link.$user.id == admin.id, "Media link now points to the deleting admin")
+        }
+    }
+
+    @Test("User with uploads deletes themselves and the server admin takes ownership")
+    func selfDeleteHandsMediaToServerAdmin() async throws {
+        try await withApp(configure: configure) { app in
+            let admin = try await serverAdminUser(app: app)
+            let user = try await makeUser(app: app, email: "self-uploader@example.com", tags: [])
+            let userID = try user.requireID()
+            let (mediaID, _) = try await makeUpload(app: app, owner: user)
+            let userJWT = try await login(app: app, email: user.email, password: password)
+
+            try await app.testing().test(
+                .DELETE, "/api/v2/users/\(userID)",
+                headers: ["Authorization": "Bearer \(userJWT)"]
+            ) { res async in
+                #expect(res.status == .noContent)
+            }
+
+            #expect(try await User.find(userID, on: app.db) == nil, "User is deleted")
+            let media = try #require(try await MediaContent.find(mediaID, on: app.db), "Upload is kept")
+            #expect(media.$user.id == admin.id, "Upload now belongs to the server admin")
+        }
+    }
+
     // MARK: - Helpers
 
     /// Saves a user with `password`, attaching tags by name and creating any that don't exist.
@@ -123,5 +169,25 @@ struct UserDeleteTests {
             try await user.$tags.attach(tag, on: app.db)
         }
         return user
+    }
+
+    private func serverAdminUser(app: Application) async throws -> User {
+        let adminEmail = try #require(Environment.get("SERVER_ADMIN_EMAIL"))
+        return try #require(try await User.query(on: app.db).filter(\.$email == adminEmail).first())
+    }
+
+    /// Saves a media record owned by `owner` plus its user–media link. No file is written.
+    private func makeUpload(app: Application, owner: User) async throws -> (media: UUID, link: UUID) {
+        let media = try MediaContent(
+            filename: UUID().uuidString,
+            rawFilename: "photo.png",
+            mimeType: "image/png",
+            contentLength: 4,
+            userID: owner
+        )
+        try await media.save(on: app.db)
+        let link = try UserMediaContent(user: owner, mediaContent: media)
+        try await link.save(on: app.db)
+        return (try media.requireID(), try link.requireID())
     }
 }
